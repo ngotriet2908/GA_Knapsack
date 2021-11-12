@@ -1,3 +1,4 @@
+import copy
 import random
 
 import numpy as np
@@ -47,6 +48,12 @@ class KnapsackEA:
             # Apply mutation to offsprings
             map(self.mutation, offsprings)
 
+            map(self.lso, self.population)
+            # map(self.lso_swap, self.population)
+
+            # for i in range(len(self.population)):
+            #     self.population[i] = self.lso(self.population[i])
+
             # Apply mutation to population
             map(self.mutation, self.population)
 
@@ -65,11 +72,54 @@ class KnapsackEA:
 
     def mutation(self, ind: Individual) -> Individual:
         if random.random() < ind.alpha:
-            for x in range(int(len(ind.order)*0.1)):
+            for x in range(int(len(ind.order) * 0.1)):
                 idx1 = random.randint(0, len(ind.order) - 1)
                 idx2 = random.randint(0, len(ind.order) - 1)
                 ind.order[idx1], ind.order[idx2] = ind.order[idx2], ind.order[idx1]
         return ind
+
+    def lso(self, ind: Individual) -> Individual:
+        f_ind = self.ks.fitness(ind)
+        ind1 = copy.deepcopy(ind)
+
+        best_fitness = f_ind
+        best_ind = copy.deepcopy(ind)
+
+        for i in range(1, len(ind1.order)):
+            ind1.order[0] = ind.order[i]
+            ind1.order[1:i + 1] = ind.order[0:i]
+            ind1.order[i + 1:] = ind.order[i + 1:]
+
+            fv = self.ks.fitness(ind1)
+            if fv > best_fitness:
+                best_fitness = fv
+                best_ind.order = ind1.order
+
+        # print("lso:", str(f_ind), "->", str(best_fitness))
+        return best_ind
+
+    def lso_swap(self, ind: Individual) -> Individual:
+        f_ind = self.ks.fitness(ind)
+        ind1 = copy.deepcopy(ind)
+
+        best_fitness = f_ind
+        best_ind = copy.deepcopy(ind)
+
+        for i in range(0, len(ind1.order)):
+            for j in range(1, len(ind1.order) - 1):
+                ind1.order[j] = ind.order[i]
+                ind1.order[i] = ind.order[j]
+
+                fv = self.ks.fitness(ind1)
+                if fv > best_fitness:
+                    best_fitness = fv
+                    best_ind.order = ind1.order
+
+                ind1.order[j] = ind.order[i]
+                ind1.order[i] = ind.order[j]
+
+        # print("lso:", str(f_ind), "->", str(best_fitness))
+        return best_ind
 
     def recombination(self, ind1: Individual, ind2: Individual) -> Individual:
         in_ks1 = self.ks.in_knapsack(ind1)
@@ -103,8 +153,6 @@ class KnapsackEA:
         idx = np.argmax(rif)
         return self.population[ri[idx]]
 
-
-
     def elimination(self, offsprings: List[Individual]) -> List[Individual]:
         combined = np.concatenate((self.population, offsprings))
         l = list(combined)
@@ -113,7 +161,7 @@ class KnapsackEA:
 
 
 if __name__ == '__main__':
-    N = 500
+    N = 200
     ks = Knapsack(N)
     ksEA = KnapsackEA(ks)
 
@@ -143,4 +191,3 @@ if __name__ == '__main__':
     # print(offspring.alpha)
 
     ksEA.optimize()
-

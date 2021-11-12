@@ -2,7 +2,6 @@ import numpy as np
 import random
 from individual import Individual
 
-
 class Knapsack:
 
     def __init__(self, numObjects, capacity=None, values=None, weights=None):
